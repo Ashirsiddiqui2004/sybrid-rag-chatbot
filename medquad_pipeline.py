@@ -619,16 +619,32 @@ def reformulate_query(question, conversation_history):
     Only runs if vague pronouns detected AND history exists.
     Returns original question unchanged if no reformulation needed.
     """
-    # Vague pronouns that signal question needs context
-    vague_words = ['it', 'its', 'they', 'their', 'this',
-                   'that', 'these', 'those', 'the condition',
-                   'the disease', 'the same']
+    # Vague pronouns that signal a question needs context.
+    # Includes English, Roman Urdu, and Urdu-script pronouns so that
+    # follow-ups like "iska ilaj kya hai?" (its treatment?) or
+    # "اس کا علاج کیا ہے؟" also get reformulated using the conversation.
+    vague_words = [
+        # English
+        'it', 'its', 'they', 'their', 'this', 'that', 'these', 'those',
+        'the condition', 'the disease', 'the same',
+        # Roman Urdu (Latin letters)
+        'iska', 'iski', 'inka', 'inki', 'uska', 'uski', 'unka', 'unki',
+        'yeh', 'ye', 'woh', 'wo',
+        # Urdu script
+        'اس', 'اسکا', 'اسکی', 'ان', 'انکا', 'انکی', 'یہ', 'وہ', 'اس کا', 'اس کی',
+    ]
 
     question_lower = question.lower()
 
     # FIX 1 — strip punctuation so "it?" matches "it"
     words = [w.strip(string.punctuation) for w in question_lower.split()]
-    needs_reformulation = any(word in words for word in vague_words)
+    # Check both individual words AND the raw text (for multi-word Urdu
+    # pronouns like "اس کا" and English "the condition")
+    needs_reformulation = (
+        any(word in words for word in vague_words)
+        or any(phrase in question_lower for phrase in
+               ['the condition', 'the disease', 'the same', 'اس کا', 'اس کی'])
+    )
 
     # No reformulation needed
     if not needs_reformulation or not conversation_history:

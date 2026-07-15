@@ -670,15 +670,30 @@ def reformulate_query(question, conversation_history):
 
     Only runs if vague pronouns detected AND history exists.
     """
-    vague_words = ['it', 'its', 'they', 'their', 'this',
-                   'that', 'these', 'those', 'the product',
-                   'the item', 'same']
+    # Vague pronouns that signal a question needs context — English,
+    # Roman Urdu, and Urdu script — so follow-ups like "inme sabse sasta
+    # kaunsa hai?" (which is cheapest among them?) or "اس کی قیمت کیا ہے؟"
+    # (what's its price?) get reformulated using the conversation.
+    vague_words = [
+        # English
+        'it', 'its', 'they', 'their', 'this', 'that', 'these', 'those',
+        'the product', 'the item', 'same',
+        # Roman Urdu
+        'iska', 'iski', 'inka', 'inki', 'inme', 'inmein', 'uska', 'uski',
+        'unka', 'unki', 'yeh', 'ye', 'woh', 'wo',
+        # Urdu script
+        'اس', 'اسکا', 'اسکی', 'ان', 'انکا', 'انکی', 'یہ', 'وہ', 'اس کا', 'اس کی',
+    ]
 
     question_lower = question.lower()
 
     # FIX 1 — strip punctuation so "it?" matches "it"
     words = [w.strip(string.punctuation) for w in question_lower.split()]
-    needs_reformulation = any(word in words for word in vague_words)
+    needs_reformulation = (
+        any(word in words for word in vague_words)
+        or any(phrase in question_lower for phrase in
+               ['the product', 'the item', 'اس کا', 'اس کی'])
+    )
 
     if not needs_reformulation or not conversation_history:
         return question
