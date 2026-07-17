@@ -3,4 +3,4 @@ db/
 venv/
 __pycache__/
 *.pyc
-docs/*.csv
+docs/*.csv*.xlsx
